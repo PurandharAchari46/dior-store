@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DIOR LUXURY STORE</title>
+
+<style>
+:root{--bg:#f5f5f5;--text:#000;--card:#fff}
+.dark{--bg:#121212;--text:#fff;--card:#1e1e1e}
+
+body{margin:0;font-family:Arial;background:var(--bg);color:var(--text)}
+
+.navbar{
+display:flex;justify-content:space-between;
+padding:15px;background:black;color:white
+}
+
+#products{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:20px;padding:20px
+}
+
+.card{
+background:var(--card);
+padding:10px;border-radius:10px;
+transition:.3s
+}
+.card:hover{transform:scale(1.05)}
+
+.card img{
+width:100%;height:200px;object-fit:cover
+}
+
+button{margin:5px;padding:6px;cursor:pointer}
+
+.modal{
+display:none;position:fixed;
+width:100%;height:100%;
+background:rgba(0,0,0,.7)
+}
+
+.modal-content{
+background:var(--card);
+width:320px;margin:80px auto;
+padding:20px;border-radius:10px
+}
+
+.toast{
+position:fixed;bottom:20px;right:20px;
+background:black;color:white;padding:10px;display:none
+}
+</style>
+</head>
+
+<body>
+
+<div class="navbar">
+<h2>DIOR LUXURY STORE</h2>
+
+<input id="search" placeholder="Search..." onkeyup="searchProducts()">
+
+<div>
+❤️ <span id="wishCount">0</span>
+🛒 <span id="cartCount">0</span>
+<button onclick="openOrders()">Orders</button>
+<button onclick="openCart()">Cart</button>
+<button onclick="openWishlist()">Wishlist</button>
+<button onclick="toggleTheme()">🌙</button>
+</div>
+</div>
+
+<!-- FILTER -->
+<div style="text-align:center;padding:10px">
+<button onclick="filterCategory('all')">All</button>
+<button onclick="filterCategory('boys')">Boys</button>
+<button onclick="filterCategory('girls')">Girls</button>
+<button onclick="filterCategory('shoes')">Shoes</button>
+<button onclick="filterCategory('bags')">Bags</button>
+<button onclick="sortPrice()">Sort Price</button>
+</div>
+
+<!-- PRODUCTS -->
+<div id="products"></div>
+
+<!-- CART -->
+<div id="cartModal" class="modal">
+<div class="modal-content">
+<h3>Cart</h3>
+<div id="cartItems"></div>
+<h4>Total ₹<span id="total"></span></h4>
+
+<hr>
+<h3>Customer Details</h3>
+<input id="cname" placeholder="Name"><br><br>
+<input id="caddress" placeholder="Address"><br><br>
+<input id="cphone" placeholder="Phone"><br><br>
+
+<button onclick="placeOrder()">Place Order</button>
+<button onclick="closeCart()">Close</button>
+
+<div id="orderStatus"></div>
+</div>
+</div>
+
+<!-- WISHLIST -->
+<div id="wishModal" class="modal">
+<div class="modal-content">
+<h3>Wishlist</h3>
+<div id="wishItems"></div>
+<button onclick="closeWishlist()">Close</button>
+</div>
+</div>
+
+<!-- ORDERS -->
+<div id="ordersModal" class="modal">
+<div class="modal-content">
+<h3>Orders</h3>
+<div id="ordersList"></div>
+<button onclick="closeOrders()">Close</button>
+</div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+
+// ================= PRODUCTS =================
+const products = [
+{id:1,name:"Men Shirt",price:2500,cat:"boys",rating:4.2,img:"https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf"},
+{id:2,name:"Men T-Shirt",price:1800,cat:"boys",rating:4.1,img:"https://images.unsplash.com/photo-1523381210434-271e8be1f52b"},
+{id:3,name:"Denim Jacket",price:4200,cat:"boys",rating:4.5,img:"https://images.unsplash.com/photo-1542060748-10c28b62716b"},
+{id:4,name:"Formal Shirt",price:2700,cat:"boys",rating:4.0,img:"https://images.unsplash.com/photo-1603252109303-2751441dd157"},
+{id:5,name:"Hoodie",price:3500,cat:"boys",rating:4.3,img:"https://images.unsplash.com/photo-1556821840-3a9c6b8d41a6"},
+
+{id:6,name:"Red Dress",price:4500,cat:"girls",rating:4.6,img:"https://images.unsplash.com/photo-1539109136881-3be0616acf4b"},
+{id:7,name:"Party Gown",price:6500,cat:"girls",rating:4.7,img:"https://images.unsplash.com/photo-1520975922071-a0a5fdfbb3b3"},
+{id:8,name:"Casual Top",price:2000,cat:"girls",rating:4.2,img:"https://images.unsplash.com/photo-1495121605193-b116b5b09a5c"},
+{id:9,name:"Floral Dress",price:3800,cat:"girls",rating:4.4,img:"https://images.unsplash.com/photo-1521334884684-d80222895322"},
+{id:10,name:"Designer Dress",price:5200,cat:"girls",rating:4.5,img:"https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03"},
+
+{id:11,name:"Sneakers",price:5500,cat:"shoes",rating:4.6,img:"https://images.unsplash.com/photo-1542291026-7eec264c27ff"},
+{id:12,name:"Running Shoes",price:3200,cat:"shoes",rating:4.3,img:"https://images.unsplash.com/photo-1528701800489-20be0f9f7d1c"},
+{id:13,name:"Casual Shoes",price:2800,cat:"shoes",rating:4.2,img:"https://images.unsplash.com/photo-1588361861040-ac9b1018f6d5"},
+{id:14,name:"Formal Shoes",price:4000,cat:"shoes",rating:4.4,img:"https://images.unsplash.com/photo-1539185441755-769473a23570"},
+{id:15,name:"Sport Shoes",price:4700,cat:"shoes",rating:4.5,img:"https://images.unsplash.com/photo-1600185365483-26d7a4cc7519"},
+
+{id:16,name:"Handbag",price:8500,cat:"bags",rating:4.7,img:"https://images.unsplash.com/photo-1584917865442-de89df76afd3"},
+{id:17,name:"Purse",price:6200,cat:"bags",rating:4.5,img:"https://images.unsplash.com/photo-1591561954557-26941169b49e"},
+{id:18,name:"Travel Bag",price:5000,cat:"bags",rating:4.3,img:"https://images.unsplash.com/photo-1514474959185-1472d4c4e0d3"},
+{id:19,name:"Backpack",price:3000,cat:"bags",rating:4.2,img:"https://images.unsplash.com/photo-1509762774605-f07235a08f1f"},
+{id:20,name:"Designer Bag",price:9000,cat:"bags",rating:4.8,img:"https://images.unsplash.com/photo-1548036328-c9fa89d128fa"}
+];
+
+// ================= STORAGE =================
+let cart=[],wishlist=[],orders=[];
+
+// ================= LOAD =================
+function loadProducts(list=products){
+let html="";
+list.forEach(p=>{
+html+=`
+<div class="card">
+<img src="${p.img}">
+<h4>${p.name}</h4>
+<p>⭐ ${p.rating}</p>
+<p>₹${p.price}</p>
+<button onclick="addToCart(${p.id})">Add</button>
+<button onclick="addWish(${p.id})">❤️</button>
+</div>`;
+});
+document.getElementById("products").innerHTML=html;
+}
+
+// ================= CART =================
+function addToCart(id){
+let item=cart.find(i=>i.id===id);
+if(item)item.qty++;
+else cart.push({...products.find(p=>p.id===id),qty:1});
+updateCart();toast("Added");
+}
+
+function updateCart(){
+cartCount.innerText=cart.reduce((s,i)=>s+i.qty,0);
+}
+
+function openCart(){
+let html="",total=0;
+cart.forEach((i,index)=>{
+total+=i.price*i.qty;
+html+=`${i.name} x${i.qty} ₹${i.price*i.qty}<br>`;
+});
+cartItems.innerHTML=html||"Empty";
+document.getElementById("total").innerText=total;
+cartModal.style.display="block";
+}
+
+function closeCart(){cartModal.style.display="none";}
+
+// ================= WISHLIST =================
+function addWish(id){
+if(wishlist.find(p=>p.id===id)){toast("Already added");return;}
+wishlist.push(products.find(p=>p.id===id));
+wishCount.innerText=wishlist.length;
+}
+
+function openWishlist(){
+let html="";
+wishlist.forEach(i=>html+=`${i.name}<br>`);
+wishItems.innerHTML=html||"Empty";
+wishModal.style.display="block";
+}
+
+function closeWishlist(){wishModal.style.display="none";}
+
+// ================= ORDER =================
+function placeOrder(){
+let name=cname.value,address=caddress.value,phone=cphone.value;
+if(!name||!address||!phone){toast("Fill details");return;}
+orders.push({items:cart});
+orderStatus.innerHTML="Order placed 🎉";
+cart=[];updateCart();
+}
+
+function openOrders(){
+let html="";
+orders.forEach(o=>html+=`Order (${o.items.length} items)<hr>`);
+ordersList.innerHTML=html||"No Orders";
+ordersModal.style.display="block";
+}
+
+function closeOrders(){ordersModal.style.display="none";}
+
+// ================= FILTER =================
+function filterCategory(cat){
+if(cat==="all") loadProducts(products);
+else loadProducts(products.filter(p=>p.cat===cat));
+}
+
+// ================= SEARCH =================
+function searchProducts(){
+let v=search.value.toLowerCase();
+loadProducts(products.filter(p=>p.name.toLowerCase().includes(v)));
+}
+
+// ================= SORT =================
+function sortPrice(){
+products.sort((a,b)=>a.price-b.price);
+loadProducts(products);
+}
+
+// ================= THEME =================
+function toggleTheme(){document.body.classList.toggle("dark");}
+
+// ================= TOAST =================
+function toast(msg){
+let t=document.getElementById("toast");
+t.innerText=msg;t.style.display="block";
+setTimeout(()=>t.style.display="none",2000);
+}
+
+// ================= INIT =================
+window.onload=loadProducts;
+
+</script>
+
+</body>
+</html>
