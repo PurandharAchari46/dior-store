@@ -1,249 +1,626 @@
-// ================= PRODUCTS =================
-const products = [
+@ -1,501 +1,124 @@
+import { Fragment, useEffect, useState } from "react";
+import { Dialog, Popover, Tab, Transition } from "@headlessui/react";
+import {
+  Bars3Icon,
+  MagnifyingGlassIcon,
+  ShoppingBagIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 
-{id:1,name:"Men Black Shirt",price:2500,cat:"boys",rating:4.2,img:"https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf"},
-{id:2,name:"Men Casual T-Shirt",price:1800,cat:"boys",rating:4.1,img:"https://images.unsplash.com/photo-1523381210434-271e8be1f52b"},
-{id:3,name:"Men Denim Jacket",price:4200,cat:"boys",rating:4.5,img:"https://images.unsplash.com/photo-1542060748-10c28b62716b"},
-{id:4,name:"Men Formal Shirt",price:2700,cat:"boys",rating:4.0,img:"https://images.unsplash.com/photo-1603252109303-2751441dd157"},
-{id:5,name:"Men Hoodie",price:3500,cat:"boys",rating:4.3,img:"https://images.unsplash.com/photo-1556821840-3a9c6b8d41a6"},
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Avatar, Button, Menu, MenuItem } from "@mui/material";
+import { navigation } from "../../../config/navigationMenu";
+import AuthModal from "../Auth/AuthModal";
+import { useDispatch, useSelector } from "react-redux";
+import { deepPurple } from "@mui/material/colors";
+import { getUser, logout } from "../../../Redux/Auth/Action";
+import { getCart } from "../../../Redux/Customers/Cart/Action";
+import TextField from "@mui/material/TextField";
 
-{id:6,name:"Women Red Dress",price:4500,cat:"girls",rating:4.6,img:"https://images.unsplash.com/photo-1539109136881-3be0616acf4b"},
-{id:7,name:"Women Party Gown",price:6500,cat:"girls",rating:4.7,img:"https://images.unsplash.com/photo-1520975922071-a0a5fdfbb3b3"},
-{id:8,name:"Women Casual Top",price:2000,cat:"girls",rating:4.2,img:"https://images.unsplash.com/photo-1495121605193-b116b5b09a5c"},
-{id:9,name:"Women Floral Dress",price:3800,cat:"girls",rating:4.4,img:"https://images.unsplash.com/photo-1521334884684-d80222895322"},
-{id:10,name:"Women Designer Dress",price:5200,cat:"girls",rating:4.5,img:"https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03"},
-
-{id:11,name:"Nike Sneakers",price:5500,cat:"shoes",rating:4.6,img:"https://images.unsplash.com/photo-1542291026-7eec264c27ff"},
-{id:12,name:"Running Shoes",price:3200,cat:"shoes",rating:4.3,img:"https://images.unsplash.com/photo-1528701800489-20be0f9f7d1c"},
-{id:13,name:"Casual Shoes",price:2800,cat:"shoes",rating:4.2,img:"https://images.unsplash.com/photo-1588361861040-ac9b1018f6d5"},
-{id:14,name:"Formal Shoes",price:4000,cat:"shoes",rating:4.4,img:"https://images.unsplash.com/photo-1539185441755-769473a23570"},
-{id:15,name:"Sport Shoes",price:4700,cat:"shoes",rating:4.5,img:"https://images.unsplash.com/photo-1600185365483-26d7a4cc7519"},
-
-{id:16,name:"Leather Handbag",price:8500,cat:"bags",rating:4.7,img:"https://images.unsplash.com/photo-1584917865442-de89df76afd3"},
-{id:17,name:"Luxury Purse",price:6200,cat:"bags",rating:4.5,img:"https://images.unsplash.com/photo-1591561954557-26941169b49e"},
-{id:18,name:"Travel Bag",price:5000,cat:"bags",rating:4.3,img:"https://images.unsplash.com/photo-1514474959185-1472d4c4e0d3"},
-{id:19,name:"Backpack",price:3000,cat:"bags",rating:4.2,img:"https://images.unsplash.com/photo-1509762774605-f07235a08f1f"},
-{id:20,name:"Designer Bag",price:9000,cat:"bags",rating:4.8,img:"https://images.unsplash.com/photo-1548036328-c9fa89d128fa"}
-];
-
-// ================= STORAGE =================
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
-let wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
-let orders = JSON.parse(localStorage.getItem("orders")) || [];
-
-// ================= LOAD PRODUCTS =================
-function loadProducts(list = products){
-let html = "";
-
-list.forEach(p=>{
-html += `
-<div class="card">
-<div class="badge">NEW</div>
-
-<div class="heart" onclick="addWish(${p.id})">❤️</div>
-
-<img src="${p.img}">
-
-<div class="info">
-<h4>${p.name}</h4>
-<p>⭐ ${p.rating}</p>
-<p class="price">₹${p.price}</p>
-</div>
-
-<div class="overlay">
-<button onclick="addToCart(${p.id})">Add to Cart</button>
-</div>
-
-</div>`;
-});
-
-document.getElementById("products").innerHTML = html;
+function classNames(...classes) {
+  return classes.filter(Boolean).join(" ");
 }
 
-// ================= SEARCH =================
-function searchProducts(){
-let v = document.getElementById("search").value.toLowerCase();
-loadProducts(products.filter(p=>p.name.toLowerCase().includes(v)));
+export default function Navigation() {
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { auth, cart } = useSelector((store) => store);
+  const [openAuthModal, setOpenAuthModal] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const openUserMenu = Boolean(anchorEl);
+  const jwt = localStorage.getItem("jwt");
+  const location = useLocation();
+
+  useEffect(() => {
+    if (jwt) {
+      dispatch(getUser(jwt));
+      dispatch(getCart(jwt));
+    }
+  }, [jwt]);
+
+  const handleUserClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleCloseUserMenu = (event) => {
+    setAnchorEl(null);
+  };
+
+  const handleOpen = () => {
+    setOpenAuthModal(true);
+  };
+  const handleClose = () => {
+    setOpenAuthModal(false);
+  };
+
+  const handleCategoryClick = (category, section, item, close) => {
+    navigate(`/${category.id}/${section.id}/${item.id}`);
+    close();
+  };
+
+  useEffect(() => {
+    if (auth.user) {
+      handleClose();
+    }
+    if (location.pathname === "/login" || location.pathname === "/register") {
+      navigate(-1);
+    }
+  }, [auth.user]);
+
+  const handleLogout = () => {
+    handleCloseUserMenu();
+    dispatch(logout());
+  };
+  const handleMyOrderClick = () => {
+    handleCloseUserMenu();
+    auth.user?.role === "ROLE_ADMIN"
+      ? navigate("/admin")
+      : navigate("/account/order");
+  };
+
+  return (
+    <div className="bg-white pb-10">
+      {/* Mobile menu */}
+      <Transition.Root show={open} as={Fragment}>
+        <Dialog as="div" className="relative z-40 lg:hidden" onClose={setOpen}>
+          <Transition.Child
+            as={Fragment}
+            enter="transition-opacity ease-linear duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="transition-opacity ease-linear duration-300"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 z-40 flex">
+            <Transition.Child
+              as={Fragment}
+              enter="transition ease-in-out duration-300 transform"
+              enterFrom="-translate-x-full"
+              enterTo="translate-x-0"
+              leave="transition ease-in-out duration-300 transform"
+              leaveFrom="translate-x-0"
+              leaveTo="-translate-x-full"
+            >
+              <Dialog.Panel className="relative flex w-full max-w-xs flex-col overflow-y-auto bg-white pb-12 shadow-xl">
+                <div className="flex px-4 pb-2 pt-5">
+                  <button
+                    type="button"
+                    className="-m-2 inline-flex items-center justify-center rounded-md p-2 text-gray-400"
+                    onClick={() => setOpen(false)}
+                  >
+                    <span className="sr-only">Close menu</span>
+                    <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                  </button>
+                </div>
+
+                {/* Links */}
+                <Tab.Group as="div" className="mt-2">
+                  <div className="border-b border-gray-200">
+                    <Tab.List className="-mb-px flex space-x-8 px-4">
+                      {navigation.categories.map((category) => (
+                        <Tab
+                          key={category.name}
+                          className={({ selected }) =>
+                            classNames(
+                              selected
+                                ? "border-indigo-600 text-indigo-600"
+                                : "border-transparent text-gray-900",
+                              "flex-1 whitespace-nowrap border-b-2 px-1 py-4 text-base font-medium border-none"
+                            )
+                          }
+                        >
+                          {category.name}
+                        </Tab>
+                      ))}
+                    </Tab.List>
+                  </div>
+                  <Tab.Panels as={Fragment}>
+                    {navigation.categories.map((category) => (
+                      <Tab.Panel
+                        key={category.name}
+                        className="space-y-10 px-4 pb-8 pt-10"
+                      >
+                        <div className="grid grid-cols-2 gap-x-4">
+                          {category.featured.map((item) => (
+                            <div
+                              key={item.name}
+                              className="group relative text-sm"
+                            >
+                              <div className="aspect-h-1 aspect-w-1 overflow-hidden rounded-lg bg-gray-100 group-hover:opacity-75">
+                                <img
+                                  src={item.imageSrc}
+                                  alt={item.imageAlt}
+                                  className="object-cover object-center"
+                                />
+                              </div>
+                              <a
+                                href={item.href}
+                                className="mt-6 block font-medium text-gray-900"
+                              >
+                                <span
+                                  className="absolute inset-0 z-10"
+                                  aria-hidden="true"
+                                />
+                                {item.name}
+                              </a>
+                              <p aria-hidden="true" className="mt-1">
+                                Shop now
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                        {category.sections.map((section) => (
+                          <div key={section.name}>
+                            <p
+                              id={`${category.id}-${section.id}-heading-mobile`}
+                              className="font-medium text-gray-900"
+                            >
+                              {section.name}
+                            </p>
+                            {/* eslint-disable-next-line jsx-a11y/no-redundant-roles */}
+                            <ul
+                              role="list"
+                              aria-labelledby={`${category.id}-${section.id}-heading-mobile`}
+                              className="mt-6 flex flex-col space-y-6"
+                            >
+                              {section.items.map((item) => (
+                                <li key={item.name} className="flow-root">
+                                  <p className="-m-2 block p-2 text-gray-500">
+                                    {"item.name"}
+                                  </p>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </Tab.Panel>
+                    ))}
+                  </Tab.Panels>
+                </Tab.Group>
+
+                <div className="space-y-6 border-t border-gray-200 px-4 py-6">
+                  {navigation.pages.map((page) => (
+                    <div key={page.name} className="flow-root">
+                      <a
+                        href={page.href}
+                        className="-m-2 block p-2 font-medium text-gray-900"
+                      >
+                        {page.name}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-6 border-t border-gray-200 px-4 py-6">
+                  <div className="flow-root">
+                    <a
+                      href="/"
+                      className="-m-2 block p-2 font-medium text-gray-900"
+                    >
+                      Sign in
+                    </a>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 px-4 py-6">
+                  <a href="/" className="-m-2 flex items-center p-2">
+                    <img
+                      src="https://tailwindui.com/img/flags/flag-canada.svg"
+                      alt=""
+                      className="block h-auto w-5 flex-shrink-0"
+                    />
+                    <span className="ml-3 block text-base font-medium text-gray-900">
+                      CAD
+                    </span>
+                    <span className="sr-only">, change currency</span>
+                  </a>
+                </div>
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition.Root>
+
+      <header className="relative bg-white">
+        <p className="flex h-10 items-center justify-center bg-indigo-600 px-4 text-sm font-medium text-white sm:px-6 lg:px-8">
+          Get free delivery on orders over $100
+        </p>
+
+        <nav aria-label="Top" className="mx-auto">
+          <div className="border-b border-gray-200">
+            <div className="flex h-16 items-center px-11">
+              <button
+                type="button"
+                className="rounded-md bg-white p-2 text-gray-400 lg:hidden"
+                onClick={() => setOpen(true)}
+              >
+                <span className="sr-only">Open menu</span>
+                <Bars3Icon className="h-6 w-6" aria-hidden="true" />
+              </button>
+
+              {/* Logo */}
+              <div className="ml-4 flex lg:ml-0">
+                <Link to="/">
+                  <span className="sr-only">Your Company</span>
+                  <img
+                    src="https://res.cloudinary.com/ddkso1wxi/image/upload/v1675919455/Logo/Copy_of_Zosh_Academy_nblljp.png"
+                    alt="Shopwithzosh"
+                    className="h-8 w-8 mr-2"
+                  />
+                </Link>
+              </div>
+
+              {/* Flyout menus */}
+              <Popover.Group className="hidden lg:ml-8 lg:block lg:self-stretch z-10">
+                <div className="flex h-full space-x-8">
+                  {navigation.categories.map((category) => (
+                    <Popover key={category.name} className="flex">
+                      {({ open, close }) => (
+                        <>
+                          <div className="relative flex">
+                            <Popover.Button
+                              className={classNames(
+                                open
+                                  ? "border-indigo-600 text-indigo-600"
+                                  : "border-transparent text-gray-700 hover:text-gray-800",
+                                "relative z-10 -mb-px flex items-center border-b-2 pt-px text-sm font-medium transition-colors duration-200 ease-out"
+                              )}
+                            >
+                              {category.name}
+                            </Popover.Button>
+                          </div>
+
+                          <Transition
+                            as={Fragment}
+                            enter="transition ease-out duration-200"
+                            enterFrom="opacity-0"
+                            enterTo="opacity-100"
+                            leave="transition ease-in duration-150"
+                            leaveFrom="opacity-100"
+                            leaveTo="opacity-0"
+                          >
+                            <Popover.Panel className="absolute inset-x-0 top-full text-sm text-gray-500">
+                              {/* Presentational element used to render the bottom shadow, if we put the shadow on the actual panel it pokes out the top, so we use this shorter element to hide the top of the shadow */}
+                              <div
+                                className="absolute inset-0 top-1/2 bg-white shadow"
+                                aria-hidden="true"
+                              />
+
+                              <div className="relative bg-white">
+                                <div className="mx-auto max-w-7xl px-8">
+                                  <div className="grid grid-cols-2 gap-x-8 gap-y-10 py-16">
+                                    <div className="col-start-2 grid grid-cols-2 gap-x-8">
+                                      {category.featured.map((item) => (
+                                        <div
+                                          key={item.name}
+                                          className="group relative text-base sm:text-sm"
+                                        >
+                                          <div className="aspect-h-1 aspect-w-1 overflow-hidden rounded-lg bg-gray-100 group-hover:opacity-75">
+                                            <img
+                                              src={item.imageSrc}
+                                              alt={item.imageAlt}
+                                              className="object-cover object-center"
+                                            />
+                                          </div>
+                                          <a
+                                            href={item.href}
+                                            className="mt-6 block font-medium text-gray-900"
+                                          >
+                                            <span
+                                              className="absolute inset-0 z-10"
+                                              aria-hidden="true"
+                                            />
+                                            {item.name}
+                                          </a>
+                                          <p
+                                            aria-hidden="true"
+                                            className="mt-1"
+                                          >
+                                            Shop now
+                                          </p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <div className="row-start-1 grid grid-cols-3 gap-x-8 gap-y-10 text-sm">
+                                      {category.sections.map((section) => (
+                                        <div key={section.name}>
+                                          <p
+                                            id={`${section.name}-heading`}
+                                            className="font-medium text-gray-900"
+                                          >
+                                            {section.name}
+                                          </p>
+                                          {/* eslint-disable-next-line jsx-a11y/no-redundant-roles */}
+                                          <ul
+                                            role="list"
+                                            aria-labelledby={`${section.name}-heading`}
+                                            className="mt-6 space-y-6 sm:mt-4 sm:space-y-4"
+                                          >
+                                            {section.items.map((item) => (
+                                              <li
+                                                key={item.name}
+                                                className="flex"
+                                              >
+                                                <p
+                                                  onClick={() =>
+                                                    handleCategoryClick(
+                                                      category,
+                                                      section,
+                                                      item,
+                                                      close
+                                                    )
+                                                  }
+                                                  className="cursor-pointer hover:text-gray-800"
+                                                >
+                                                  {item.name}
+                                                </p>
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </Popover.Panel>
+                          </Transition>
+                        </>
+                      )}
+                    </Popover>
+                  ))}
+
+                  {navigation.pages.map((page) => (
+                    <a
+                      key={page.name}
+                      href={page.href}
+                      className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-800"
+                    >
+                      {page.name}
+                    </a>
+                  ))}
+                </div>
+              </Popover.Group>
+
+              <div className="ml-auto flex items-center">
+                <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-end lg:space-x-6">
+                  {auth.user ? (
+                    <div>
+                      <Avatar
+                        className="text-white"
+                        onClick={handleUserClick}
+                        aria-controls={open ? "basic-menu" : undefined}
+                        aria-haspopup="true"
+                        aria-expanded={open ? "true" : undefined}
+                        // onClick={handleUserClick}
+                        sx={{
+                          bgcolor: deepPurple[500],
+                          color: "white",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {auth.user?.firstName[0].toUpperCase()}
+                      </Avatar>
+                      {/* <Button
+                        id="basic-button"
+                        aria-controls={open ? "basic-menu" : undefined}
+                        aria-haspopup="true"
+                        aria-expanded={open ? "true" : undefined}
+                        onClick={handleUserClick}
+                      >
+                        Dashboard
+                      </Button> */}
+                      <Menu
+                        id="basic-menu"
+                        anchorEl={anchorEl}
+                        open={openUserMenu}
+                        onClose={handleCloseUserMenu}
+                        MenuListProps={{
+                          "aria-labelledby": "basic-button",
+                        }}
+                      >
+                        <MenuItem onClick={handleMyOrderClick}>
+                          {auth.user?.role === "ROLE_ADMIN"
+                            ? "Admin Dashboard"
+                            : "My Orders"}
+                        </MenuItem>
+                        <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                      </Menu>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={handleOpen}
+                      className="text-sm font-medium text-gray-700 hover:text-gray-800"
+                    >
+                      Signin
+                    </Button>
+                  )}
+                </div>
+
+                {/* Search */}
+                <div className="flex items-center lg:ml-6">
+                
+                  <p onClick={()=>navigate("/products/search")} className="p-2 text-gray-400 hover:text-gray-500">
+                    <span className="sr-only">Search</span>
+                    
+                    <MagnifyingGlassIcon
+                      className="h-6 w-6"
+                      aria-hidden="true"
+                    />
+                  </p>
+                </div>
+
+                {/* Cart */}
+                <div className="ml-4 flow-root lg:ml-6">
+                  <Button
+                    onClick={() => navigate("/cart")}
+                    className="group -m-2 flex items-center p-2"
+                  >
+                    <ShoppingBagIcon
+                      className="h-6 w-6 flex-shrink-0 text-gray-400 group-hover:text-gray-500"
+                      aria-hidden="true"
+                    />
+                    <span className="ml-2 text-sm font-medium text-gray-700 group-hover:text-gray-800">
+                      {cart.cart?.totalItem}
+                    </span>
+                    <span className="sr-only">items in cart, view bag</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </nav>
+      </header>
+      <AuthModal handleClose={handleClose} open={openAuthModal} />
+    </div>
+  );
 }
-
-// ================= FILTER =================
-function filterCategory(cat){
-if(cat==="all") loadProducts(products);
-else loadProducts(products.filter(p=>p.cat===cat));
-}
-
-// ================= SORT =================
-function sortPrice(){
-products.sort((a,b)=>a.price-b.price);
-loadProducts(products);
-}
-
-// ================= CART =================
-function addToCart(id){
-let item = cart.find(i=>i.id===id);
-
-if(item) item.qty++;
-else cart.push({...products.find(p=>p.id===id), qty:1});
-
-saveCart();
-updateCart();
-toast("Added to cart");
-}
-
-function saveCart(){
-localStorage.setItem("cart", JSON.stringify(cart));
-}
-
-function updateCart(){
-let total = cart.reduce((sum,i)=>sum + (i.qty||1),0);
-document.getElementById("cartCount").innerText = total;
-}
-
-// ================= CART UI (FIXED) =================
-function openCart(){
-let html = "", total = 0;
-
-cart.forEach((i,index)=>{
-let qty = i.qty || 1;
-total += i.price * qty;
-
-html += `
-<div>
-${i.name} x${qty} - ₹${i.price * qty}
-<button onclick="changeQty(${index},1)">+</button>
-<button onclick="changeQty(${index},-1)">-</button>
-</div>`;
-});
-
-document.getElementById("cartItems").innerHTML = html || "Cart Empty";
-document.getElementById("total").innerText = total;
-document.getElementById("orderStatus").innerHTML = "";
-document.getElementById("cartModal").style.display = "block";
-}
-
-// ================= FIXED QTY =================
-function changeQty(i,val){
-if(!cart[i]) return;
-
-cart[i].qty = (cart[i].qty||1) + val;
-
-if(cart[i].qty <= 0){
-cart.splice(i,1);
-}
-
-saveCart();
-updateCart();
-openCart();
-}
-
-// ================= CLOSE CART =================
-function closeCart(){
-document.getElementById("cartModal").style.display = "none";
-}
-
-// ================= WISHLIST =================
-function addWish(id){
-if(wishlist.find(p=>p.id===id)){
-toast("Already in wishlist");
-return;
-}
-
-wishlist.push(products.find(p=>p.id===id));
-localStorage.setItem("wishlist", JSON.stringify(wishlist));
-
-document.getElementById("wishCount").innerText = wishlist.length;
-toast("Added to wishlist");
-}
-
-// ✅ FIXED WISHLIST OPEN
-function openWishlist(){
-let html = "";
-
-wishlist.forEach(i=>{
-html += `<p>${i.name} - ₹${i.price}</p>`;
-});
-
-document.getElementById("wishItems").innerHTML = html || "Wishlist Empty";
-document.getElementById("wishModal").style.display = "block";
-}
-
-// ================= CLOSE WISHLIST =================
-function closeWishlist(){
-document.getElementById("wishModal").style.display = "none";
-}
-
-// ================= ORDER =================
-function placeOrder(){
-
-const name = document.getElementById("cname").value;
-const address = document.getElementById("caddress").value;
-const phone = document.getElementById("cphone").value;
-
-if(!name || !address || !phone){
-toast("Fill details");
-return;
-}
-
-if(cart.length===0){
-toast("Cart empty");
-return;
-}
-
-let total = cart.reduce((sum,i)=>sum+i.price*(i.qty||1),0);
-let id = "DIOR"+Math.floor(Math.random()*100000);
-
-orders.push({id,items:[...cart],total,status:"Processing"});
-localStorage.setItem("orders", JSON.stringify(orders));
-
-document.getElementById("orderStatus").innerHTML = `
-<h3>Order Confirmed 🎉</h3>
-<p>ID: ${id}</p>
-<p>Total ₹${total}</p>
-`;
-
-cart=[];
-saveCart();
-updateCart();
-}
-
-// ================= ORDERS =================
-function openOrders(){
-let html = "";
-
-orders.forEach(o=>{
-html += `
-<div>
-<b>Order ID:</b> ${o.id}<br>
-Total: ₹${o.total}<br>
-Items: ${o.items.map(i=>i.name + " x" + (i.qty||1)).join(", ")}
-<hr>
-</div>`;
-});
-
-document.getElementById("ordersList").innerHTML = html || "No Orders";
-document.getElementById("ordersModal").style.display = "block";
-}
-
-function closeOrders(){
-document.getElementById("ordersModal").style.display = "none";
-}
-
-// ================= THEME =================
-function toggleTheme(){
-document.body.classList.toggle("dark");
-}
-
-// ================= TOAST =================
-function toast(msg){
-let t = document.getElementById("toast");
-t.innerText = msg;
-t.style.display = "block";
-setTimeout(()=>t.style.display="none",2000);
-}
-
-// ================= INIT =================
-window.onload = ()=>{
-loadProducts();
-updateCart();
-document.getElementById("wishCount").innerText = wishlist.length;
-};
+export const navigation = {
+    categories: [
+      {
+        id: 'women',
+        name: 'Women',
+        featured: [
+          {
+            name: 'New Arrivals',
+            href: '/',
+            imageSrc: 'https://tailwindui.com/img/ecommerce-images/mega-menu-category-01.jpg',
+            imageAlt: 'Models sitting back to back, wearing Basic Tee in black and bone.',
+          },
+          {
+            name: 'Basic Tees',
+            href: '/',
+            imageSrc: 'https://tailwindui.com/img/ecommerce-images/mega-menu-category-02.jpg',
+            imageAlt: 'Close up of Basic Tee fall bundle with off-white, ochre, olive, and black tees.',
+          },
+        ],
+        sections: [
+          {
+            id: 'clothing',
+            name: 'Clothing',
+            items: [
+              { name: 'Tops', id:"top", href: `{women/clothing/tops}` },
+              { name: 'Dresses', id:"women_dress", href: '#' },
+              { name: 'Women Jeans', id: 'women_jeans' },
+              { name: 'Lengha Choli', id: 'lengha_choli' },
+              { name: 'Sweaters', id: 'sweater' },
+              { name: 'T-Shirts', id: 't-shirt' },
+              { name: 'Jackets', id: 'jacket' },
+              { name: 'Gouns', id: 'gouns' },
+              { name: 'Sarees', id: 'saree' },
+              { name: 'Kurtas', id: 'kurtas' },
+            ],
+          },
+          {
+            id: 'accessories',
+            name: 'Accessories',
+            items: [
+              { name: 'Watches', id: 'watch' },
+              { name: 'Wallets', id: 'wallet' },
+              { name: 'Bags', id: 'bag' },
+              { name: 'Sunglasses', id: 'sunglasse' },
+              { name: 'Hats', id: 'hat' },
+              { name: 'Belts', id: 'belt' },
+            ],
+          },
+          {
+            id: 'brands',
+            name: 'Brands',
+            items: [
+              { name: 'Full Nelson', id: '#' },
+              { name: 'My Way', id: '#' },
+              { name: 'Re-Arranged', id: '#' },
+              { name: 'Counterfeit', id: '#' },
+              { name: 'Significant Other', id: '#' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'men',
+        name: 'Men',
+        featured: [
+          {
+            name: 'New Arrivals',
+            id: '#',
+            imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-04-detail-product-shot-01.jpg',
+            imageAlt: 'Drawstring top with elastic loop closure and textured interior padding.',
+          },
+          {
+            name: 'Artwork Tees',
+            id: '#',
+            imageSrc: 'https://tailwindui.com/img/ecommerce-images/category-page-02-image-card-06.jpg',
+            imageAlt:
+              'Three shirts in gray, white, and blue arranged on table with same line drawing of hands and shapes overlapping on front of shirt.',
+          },
+        ],
+        sections: [
+          {
+            id: 'clothing',
+            name: 'Clothing',
+            items: [
+              { name: 'Mens Kurtas', id: 'mens_kurta' },
+              { name: 'Shirt', id: 'shirt' },
+              { name: 'Men Jeans', id: 'men_jeans' },
+              { name: 'Sweaters', id: '#' },
+              { name: 'T-Shirts', id: 't-shirt' },
+              { name: 'Jackets', id: '#' },
+              { name: 'Activewear', id: '#' },
+              
+            ],
+          },
+          {
+            id: 'accessories',
+            name: 'Accessories',
+            items: [
+              { name: 'Watches', id: '#' },
+              { name: 'Wallets', id: '#' },
+              { name: 'Bags', id: '#' },
+              { name: 'Sunglasses', id: '#' },
+              { name: 'Hats', id: '#' },
+              { name: 'Belts', id: '#' },
+            ],
+          },
+          {
+            id: 'brands',
+            name: 'Brands',
+            items: [
+              { name: 'Re-Arranged', id: '#' },
+              { name: 'Counterfeit', id: '#' },
+              { name: 'Full Nelson', id: '#' },
+              { name: 'My Way', id: '#' },
+            ],
+          },
+        ],
+      },
+    ],
+    pages: [
+      { name: 'Company', id: '/' },
+      { name: 'Stores', id: '/' },
+    ],
+  }
