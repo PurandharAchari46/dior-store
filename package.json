@@ -1,0 +1,19 @@
+{
+  "name": "dior-luxury-fashion-house",
+  "version": "1.0.0",
+  "description": "Dior-inspired ecommerce storefront with an Express product backend.",
+  "main": "backend/server.js",
+  "type": "module",
+  "scripts": {
+    "import:products": "node backend/scripts/importProducts.mjs",
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
