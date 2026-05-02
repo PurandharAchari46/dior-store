@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DIOR Luxury Store</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <div class="notice">Complimentary shipping and returns on all orders</div>
+
+    <header class="site-header">
+      <button class="icon-button" id="menuButton" aria-label="Open menu">Menu</button>
+      <a class="brand" href="#top" aria-label="Dior home">DIOR</a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <button data-category="all">All</button>
+        <button data-category="men">Men</button>
+        <button data-category="women">Women</button>
+        <button data-category="shoes">Shoes</button>
+        <button data-category="saree">Saree</button>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-button" id="wishlistButton" aria-label="Open wishlist">Wishlist <span id="wishlistCount">0</span></button>
+        <button class="icon-button" id="cartButton" aria-label="Open shopping bag">Bag <span id="cartCount">0</span></button>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <p>New Collection 2026</p>
+          <h1>The Art of Savoir-Faire</h1>
+          <span>Curated couture-inspired fashion, now powered by a live product backend.</span>
+          <a href="#collections">Explore Collection</a>
+        </div>
+      </section>
+
+      <section class="toolbar" id="collections">
+        <div class="search-wrap">
+          <span>Search</span>
+          <input id="searchInput" type="search" placeholder="Search products, brands, colors" />
+        </div>
+        <select id="sortSelect" aria-label="Sort products">
+          <option value="featured">Featured</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="discount-desc">Best Discount</option>
+          <option value="name-asc">Name A to Z</option>
+        </select>
+      </section>
+
+      <section class="catalog-head">
+        <div>
+          <p>Collections</p>
+          <h2 id="collectionTitle">All Products</h2>
+        </div>
+        <span id="productCount">Loading products...</span>
+      </section>
+
+      <section class="product-grid" id="productGrid" aria-live="polite"></section>
+    </main>
+
+    <aside class="drawer" id="drawer" aria-hidden="true">
+      <div class="drawer-panel">
+        <div class="drawer-head">
+          <h2 id="drawerTitle">Shopping Bag</h2>
+          <button class="icon-button" id="closeDrawer" aria-label="Close">x</button>
+        </div>
+        <div id="drawerContent"></div>
+        <div class="drawer-total" id="drawerTotal"></div>
+      </div>
+    </aside>
+
+    <template id="productCardTemplate">
+      <article class="product-card">
+        <button class="heart" type="button" aria-label="Add to wishlist">+</button>
+        <img alt="" loading="lazy" />
+        <div class="product-info">
+          <p class="brand-name"></p>
+          <h3></h3>
+          <div class="meta-row">
+            <span class="price"></span>
+            <span class="mrp"></span>
+            <span class="discount"></span>
+          </div>
+          <div class="tag-row"></div>
+          <button class="add-button" type="button">Add to Bag</button>
+        </div>
+      </article>
+    </template>
+  </body>
+</html>
