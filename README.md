@@ -1,2 +1,23 @@
-# DIOR-LUXURY-STORE
-Full Stack E-Commerce Web Application built using HTML, CSS, JavaScript, Node.js, Express, and MongoDB. Features include product browsing, search, cart, wishlist, order management, and secure user authentication using JWT. Designed with a responsive UI and scalable backend architecture.
+# DIOR Luxury Store
+
+Static ecommerce frontend with an Express backend and product data imported from `codewithzosh/ecommerce-products-data`.
+
+## Run locally
+
+```bash
+npm install
+npm run import:products
+npm start
+```
+
+Open `http://localhost:3000`.
+
+`npm run import:products` saves a local cache at `backend/data/products.json`. If that file is not present on a fresh deploy, the backend imports the catalog automatically on first API request.
+
+## API
+
+- `GET /api/health`
+- `GET /api/products?category=men&search=shirt&sort=price-asc`
+- `GET /api/products/:id`
+- `GET /api/categories`
+- `POST /api/orders`
