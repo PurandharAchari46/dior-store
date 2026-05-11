@@ -14,11 +14,18 @@ const frontendDir = path.join(rootDir, "frontend");
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.set("trust proxy", 1);
 app.use(cors());
 app.use(express.json());
 app.use(express.static(frontendDir));
 
 let productsCache;
+
+function asyncHandler(handler) {
+  return (req, res, next) => {
+    Promise.resolve(handler(req, res, next)).catch(next);
+  };
+}
 
 async function getProducts() {
   if (!productsCache) {
@@ -53,12 +60,16 @@ function matchesCategory(product, category) {
   return productCategory === category || section === category || source.includes(category);
 }
 
-app.get("/api/health", async (_req, res) => {
+app.get("/api/health", asyncHandler(async (_req, res) => {
   const products = await getProducts();
-  res.json({ ok: true, products: products.length });
-});
+  res.json({
+    ok: true,
+    products: products.length,
+    uptime: Math.round(process.uptime())
+  });
+}));
 
-app.get("/api/products", async (req, res) => {
+app.get("/api/products", asyncHandler(async (req, res) => {
   const products = await getProducts();
   const search = String(req.query.search || "").trim().toLowerCase();
   const category = String(req.query.category || "").trim().toLowerCase();
@@ -92,9 +103,9 @@ app.get("/api/products", async (req, res) => {
     count: result.length,
     products: result
   });
-});
+}));
 
-app.get("/api/products/:id", async (req, res) => {
+app.get("/api/products/:id", asyncHandler(async (req, res) => {
   const products = await getProducts();
   const product = products.find((item) => item.id === req.params.id);
 
@@ -104,16 +115,16 @@ app.get("/api/products/:id", async (req, res) => {
   }
 
   res.json(product);
-});
+}));
 
-app.get("/api/categories", async (_req, res) => {
+app.get("/api/categories", asyncHandler(async (_req, res) => {
   const products = await getProducts();
   const categories = [...new Set(products.map((product) => product.category))].sort();
   const genders = [...new Set(products.map((product) => product.gender).filter(Boolean))].sort();
   res.json({ categories, genders });
-});
+}));
 
-app.post("/api/orders", async (req, res) => {
+app.post("/api/orders", asyncHandler(async (req, res) => {
   const items = Array.isArray(req.body.items) ? req.body.items : [];
 
   if (items.length === 0) {
@@ -126,10 +137,18 @@ app.post("/api/orders", async (req, res) => {
     status: "confirmed",
     items: items.length
   });
-});
+}));
 
 app.get("*", (_req, res) => {
   res.sendFile(path.join(frontendDir, "index.html"));
+});
+
+app.use((error, _req, res, _next) => {
+  console.error(error);
+  res.status(500).json({
+    message: "The Dior backend could not complete the request.",
+    detail: process.env.NODE_ENV === "production" ? undefined : error.message
+  });
 });
 
 app.listen(port, () => {

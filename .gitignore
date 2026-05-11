@@ -27,3 +27,5 @@ replay_pid*
 node_modules/
 .env
 backend/data/products.json
+server.log
+server.err.log
